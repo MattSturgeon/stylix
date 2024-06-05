@@ -11,11 +11,41 @@
       main = lib.mkEnableOption "background transparency for the main NeoVim window";
       sign_column = lib.mkEnableOption "background transparency for the NeoVim sign column";
     };
+    config = lib.mkOption {
+      type = with lib.types; attrsOf anything;
+      readOnly = true;
+
+      description = ''
+        The stylix configuration, generated for nixvim.
+
+        If nixvim is installed via nixos, darwin, or home-manager then this will be **automatically**
+        assigned to `programs.nixvim`. If you're using a "standalone" build of nixvim, then that's
+        not possible. Instead, you should pass this config to the `nixvimExtend` function.
+
+        For example:
+
+        ```nix
+          { config, ... }: {
+            environment.systemPackages = [
+              (standalone-nixvim-derivation.nixvimExtend config.stylix.targets.nixvim.config)
+            ];
+          }
+        ```
+
+        See nixvim's docs on [extending a standalone configuration](https://nix-community.github.io/nixvim/modules/standalone.html#extending-an-existing-configuration).
+      '';
+    };
   };
 
-  config = lib.optionalAttrs (options.programs ? nixvim) (lib.mkIf config.stylix.targets.nixvim.enable {
-    programs.nixvim = {
+  config = {
+    programs = lib.optionalAttrs (options.programs ? nixvim) (lib.mkIf config.stylix.targets.nixvim.enable {
+      nixvim = config.stylix.targets.nixvim.config;
+    });
+
+    stylix.targets.nixvim.config = {
       colorschemes.base16 = {
+        enable = true;
+
         colorscheme = let
           colors = config.lib.stylix.colors.withHashtag;
         in {
@@ -36,8 +66,6 @@
           base0E = colors.base0E;
           base0F = colors.base0F;
         };
-
-        enable = true;
       };
 
       highlight = let
@@ -52,5 +80,5 @@
         SignColumn = lib.mkIf cfg.transparent_bg.sign_column transparent;
       };
     };
-  });
+  };
 }
