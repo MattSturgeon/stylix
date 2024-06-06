@@ -38,9 +38,12 @@
   };
 
   config = {
-    programs = lib.optionalAttrs (options.programs ? nixvim) (lib.mkIf config.stylix.targets.nixvim.enable {
-      nixvim = config.stylix.targets.nixvim.config;
-    });
+    programs =
+      lib.optionalAttrs
+      (options.programs ? nixvim)
+      (lib.mkIf config.stylix.targets.nixvim.enable {
+        nixvim = config.stylix.targets.nixvim.config;
+      });
 
     stylix.targets.nixvim.config = {
       colorschemes.base16 = {
