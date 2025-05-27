@@ -31,7 +31,7 @@ let
   autoload =
     let
       directory = "testbeds";
-      modules = "${inputs.self}/modules";
+      modules = ../modules;
     in
     lib.pipe modules [
       builtins.readDir
@@ -39,7 +39,7 @@ let
       (builtins.concatMap (
         module:
         let
-          testbeds = "${modules}/${module}/${directory}";
+          testbeds = modules + "/${module}/${directory}";
           files = lib.optionalAttrs (builtins.pathExists testbeds) (
             builtins.readDir testbeds
           );
@@ -50,7 +50,7 @@ let
             throw "${testbed} must be regular: ${type}"
 
           else if !lib.hasSuffix ".nix" testbed then
-            throw "testbed must be a Nix file: ${testbeds}/${testbed}"
+            throw "testbed must be a Nix file: ${toString testbeds}/${testbed}"
 
           else if testbed == ".nix" then
             throw "testbed must have a name: ${testbed}"
@@ -60,7 +60,7 @@ let
               inherit module;
 
               name = lib.removeSuffix ".nix" testbed;
-              path = "${testbeds}/${testbed}";
+              path = testbeds + "/${testbed}";
             }
         ) files
       ))
@@ -83,45 +83,9 @@ let
             testcase
           ];
 
-      system = lib.nixosSystem {
-        inherit (pkgs) system;
-
-        modules = [
-          ./modules/common.nix
-          ./modules/enable.nix
-          ./modules/application.nix
-          inputs.self.nixosModules.stylix
-          inputs.home-manager.nixosModules.home-manager
-          testbed.path
-
-          {
-            inherit stylix;
-            system.name = name;
-          }
-        ];
-      };
-
-      script = pkgs.writeShellApplication {
-        inherit name;
-        text = ''
-          cleanup() {
-            if rm --recursive "$directory"; then
-              printf '%s\n' 'Virtualisation disk image removed.'
-            fi
-          }
-
-          # We create a temporary directory rather than a temporary file, since
-          # temporary files are created empty and are not valid disk images.
-          directory="$(mktemp --directory)"
-          trap cleanup EXIT
-
-          NIX_DISK_IMAGE="$directory/nixos.qcow2" \
-            ${lib.getExe system.config.system.build.vm}
-        '';
-      };
     in
     lib.optionalAttrs (isEnabled testbed.path) {
-      ${name} = script;
+      ${name} = testbed.path;
     };
 
   # This generates a copy of each testbed for each of the following themes.
