@@ -124,74 +124,16 @@ let
       ${name} = script;
     };
 
-  # This generates a copy of each testbed for each of the following themes.
+  # This generates a copy of each testbed for each of the imported themes.
   makeTestbeds =
-    let
-      images = {
-        dark = pkgs.fetchurl {
-          name = "mountains.jpg";
-          url = "https://unsplash.com/photos/ZqLeQDjY6fY/download?ixid=M3wxMjA3fDB8MXxhbGx8fHx8fHx8fHwxNzE2MzY1NDY4fA&force=true";
-          hash = "sha256-Dm/0nKiTFOzNtSiARnVg7zM0J1o+EuIdUQ3OAuasM58=";
-        };
-
-        light = pkgs.fetchurl {
-          name = "three-bicycles.jpg";
-          url = "https://unsplash.com/photos/hwLAI5lRhdM/download?ixid=M3wxMjA3fDB8MXxhbGx8fHx8fHx8fHwxNzE2MzYxNDcwfA&force=true";
-          hash = "sha256-S0MumuBGJulUekoGI2oZfUa/50Jw0ZzkqDDu1nRkFUA=";
-        };
-      };
-    in
     testbed:
-    lib.mapAttrsToList (makeTestbed testbed) {
-      light = {
-        enable = true;
-        image = images.light;
-        base16Scheme = "${inputs.tinted-schemes}/base16/catppuccin-latte.yaml";
-        polarity = "light";
-        cursor = {
-          name = "Vanilla-DMZ";
-          package = pkgs.vanilla-dmz;
-          size = 32;
-        };
-      };
-      dark = {
-        enable = true;
-        image = images.dark;
-        base16Scheme = "${inputs.tinted-schemes}/base16/catppuccin-macchiato.yaml";
-        polarity = "dark";
-        cursor = {
-          name = "Vanilla-DMZ";
-          package = pkgs.vanilla-dmz;
-          size = 32;
-        };
-      };
-      imageless = {
-        enable = true;
-        base16Scheme = "${inputs.tinted-schemes}/base16/catppuccin-macchiato.yaml";
-        polarity = "dark";
-        cursor = {
-          name = "Vanilla-DMZ";
-          package = pkgs.vanilla-dmz;
-          size = 32;
-        };
-      };
-      schemeless = {
-        enable = true;
-        image = images.dark;
-        polarity = "dark";
-        cursor = {
-          name = "Vanilla-DMZ";
-          package = pkgs.vanilla-dmz;
-          size = 32;
-        };
-      };
-      cursorless = {
-        enable = true;
-        image = images.dark;
-        base16Scheme = "${inputs.tinted-schemes}/base16/catppuccin-macchiato.yaml";
-        polarity = "dark";
-      };
-    };
+    lib.mapAttrsToList (makeTestbed testbed) (
+      import ./themes.nix {
+        inherit (inputs) tinted-schemes;
+        inherit (pkgs) vanilla-dmz;
+        images = pkgs.callPackages ./images.nix { };
+      }
+    );
 
 in
 # Testbeds are merged using lib.attrsets.unionOfDisjoint to throw an error if
