@@ -5,6 +5,7 @@
     ./modules.nix
     ./packages.nix
     ./pre-commit.nix
+    ./testbed.nix
   ];
 
   perSystem =
